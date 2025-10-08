@@ -1,20 +1,37 @@
-// Funções de integração com Strava API
+// ** FUNÇÕES DE INTEGRAÇÃO COM A API DO STRAVA **
+
+// Constrói a URL de autorização do Strava
 function getStravaAuthUrl() {
     const params = new URLSearchParams({
         client_id: STRAVA_CONFIG.clientId,
         redirect_uri: STRAVA_CONFIG.redirectUri,
         response_type: 'code',
         scope: STRAVA_CONFIG.scope,
-        approval_prompt: 'auto'
+        approval_prompt: 'force' // 'force' para garantir que o usuário veja a tela de permissão
     });
     return `${STRAVA_CONFIG.authUrl}?${params.toString()}`;
 }
 
+// Redireciona o usuário para a página de autorização do Strava
 function connectStrava() {
     window.location.href = getStravaAuthUrl();
 }
 
-async function exchangeCodeForToken(code) {
+// Verifica se há um código de autorização na URL (após o retorno do Strava)
+async function checkForStravaCode() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+        showLoading(true);
+        // Limpa a URL para remover o código e evitar reprocessamento
+        window.history.replaceState({}, document.title, window.location.pathname);
+        await handleStravaCallback(code);
+        showLoading(false);
+    }
+}
+
+// Lida com o código de retorno, trocando-o por um token de acesso
+async function handleStravaCallback(code) {
     try {
         const response = await fetch(STRAVA_CONFIG.tokenUrl, {
             method: 'POST',
@@ -26,42 +43,63 @@ async function exchangeCodeForToken(code) {
                 grant_type: 'authorization_code'
             })
         });
-        if (!response.ok) throw new Error('Erro ao trocar código por token');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro na troca de código por token:', error);
-        throw error;
-    }
-}
+        const tokenData = await response.json();
+        if (!response.ok) throw new Error(tokenData.message);
 
-async function handleStravaCallback(code) {
-    try {
-        showLoading(true);
-        const tokenData = await exchangeCodeForToken(code);
-        const athleteData = await getAthleteData(tokenData.access_token);
         const stravaInfo = {
             accessToken: tokenData.access_token,
             refreshToken: tokenData.refresh_token,
-            athleteId: athleteData.id,
-            athleteName: `${athleteData.firstname} ${athleteData.lastname}`,
-            connectedAt: new Date().toISOString()
+            expiresAt: tokenData.expires_at,
+            athleteId: tokenData.athlete.id,
+            athleteName: `${tokenData.athlete.firstname} ${tokenData.athlete.lastname}`
         };
+
         await database.ref(`users/${window.appState.currentUser.uid}/strava`).set(stravaInfo);
-        window.appState.stravaConnected = true;
         window.appState.stravaData = stravaInfo;
-        await loadStravaActivities(tokenData.access_token);
-        updateStravaUI();
-        window.history.replaceState({}, document.title, window.location.pathname);
+        showSuccess('Conta Strava conectada com sucesso!');
+        updateStravaUICard();
     } catch (error) {
-        showError('Erro ao conectar com Strava');
-    } finally {
-        showLoading(false);
+        showError('Erro ao conectar com Strava: ' + error.message);
     }
 }
 
-async function getAthleteData(accessToken) { /* ... */ }
-async function getAthleteActivities(accessToken) { /* ... */ }
-async function loadStravaActivities(accessToken) { /* ... */ }
-async function syncStrava() { /* ... */ }
-async function checkStravaConnection() { /* ... */ }
-function updateStravaUI() { /* ... */ }
+// Verifica a conexão existente e atualiza a UI
+async function checkStravaConnection() {
+    const stravaRef = database.ref(`users/${window.appState.currentUser.uid}/strava`);
+    const snapshot = await stravaRef.once('value');
+    if (snapshot.exists()) {
+        window.appState.stravaData = snapshot.val();
+    } else {
+        window.appState.stravaData = null;
+    }
+    updateStravaUICard();
+    await checkForStravaCode();
+}
+
+// Renderiza o card do Strava no painel do atleta
+function updateStravaUICard() {
+    const cardDiv = document.getElementById('stravaCard');
+    if (!cardDiv) return;
+
+    if (window.appState.stravaData) {
+        // Conectado
+        cardDiv.innerHTML = `
+            <div class="strava-connected">
+                <i class="fab fa-strava"></i>
+                <h3>Conectado ao Strava</h3>
+                <p>Você está conectado como <strong>${window.appState.stravaData.athleteName}</strong>.</p>
+                <small>Suas atividades serão sincronizadas em breve.</small>
+            </div>
+        `;
+    } else {
+        // Desconectado
+        cardDiv.innerHTML = `
+            <div class="strava-disconnected">
+                <i class="fab fa-strava"></i>
+                <h3>Conectar com Strava</h3>
+                <p>Importe suas atividades e acompanhe seu progresso de forma automática.</p>
+                <button id="connectStravaBtn" class="btn-strava"><i class="fab fa-strava"></i> Conectar com Strava</button>
+            </div>
+        `;
+    }
+}
