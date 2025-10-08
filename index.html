@@ -2,10 +2,9 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeRunners - Gestão de Atletas</title>
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Font Awesome (CDN CSS) é mais moderno e performático que o kit JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
@@ -76,7 +75,7 @@
             <div id="adminOverviewTab" class="dash-tab-content active">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <div class="stat-icon">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-info">
@@ -85,7 +84,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #20c997, #17a2b8);">
+                        <div class="stat-icon">
                             <i class="fas fa-user-tie"></i>
                         </div>
                         <div class="stat-info">
@@ -94,7 +93,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #ff6b6b, #ffa500);">
+                        <div class="stat-icon">
                             <i class="fas fa-running"></i>
                         </div>
                         <div class="stat-info">
@@ -113,7 +112,7 @@
                         <i class="fas fa-user-plus"></i> Adicionar Usuário
                     </button>
                 </div>
-                <div class="athletes-grid" id="adminUsersList">
+                <div id="adminUsersList">
                     <!-- Usuários serão carregados aqui -->
                 </div>
             </div>
@@ -132,10 +131,7 @@
             </div>
         </div>
     </div>
-    
-    <!-- Atleta Dashboard e Professor Dashboard (sem alterações estruturais) -->
-    <!-- ... (o restante do HTML dos dashboards permanece o mesmo) ... -->
-    
+
     <!-- Atleta Dashboard Screen -->
     <div id="atletaDashboard" class="screen">
         <header class="dashboard-header">
@@ -167,10 +163,28 @@
                     <i class="fas fa-brain"></i> Conhecimento
                 </button>
             </div>
-            <div id="overviewTab" class="dash-tab-content active"><!-- Conteúdo... --></div>
-            <div id="stravaTab" class="dash-tab-content"><!-- Conteúdo... --></div>
-            <div id="activitiesTab" class="dash-tab-content"><!-- Conteúdo... --></div>
-            <div id="knowledgeAthleteTab" class="dash-tab-content"><!-- Conteúdo... --></div>
+
+            <!-- Visão Geral Atleta -->
+            <div id="overviewTab" class="dash-tab-content active">
+                <div class="stats-grid">
+                    <!-- ... Conteúdo ... -->
+                </div>
+            </div>
+
+            <!-- Strava Atleta -->
+            <div id="stravaTab" class="dash-tab-content">
+                <!-- ... Conteúdo ... -->
+            </div>
+
+            <!-- Atividades Atleta -->
+            <div id="activitiesTab" class="dash-tab-content">
+                <!-- ... Conteúdo ... -->
+            </div>
+
+            <!-- Conhecimento Atleta -->
+            <div id="knowledgeAthleteTab" class="dash-tab-content">
+                <!-- ... Conteúdo ... -->
+            </div>
         </div>
     </div>
 
@@ -202,17 +216,32 @@
                     <i class="fas fa-brain"></i> Conhecimento
                 </button>
             </div>
-            <div id="profOverviewTab" class="dash-tab-content active"><!-- Conteúdo... --></div>
-            <div id="athletesTab" class="dash-tab-content"><!-- Conteúdo... --></div>
-            <div id="knowledgeProfessorTab" class="dash-tab-content"><!-- Conteúdo... --></div>
+
+            <!-- Visão Geral Professor -->
+            <div id="profOverviewTab" class="dash-tab-content active">
+                <!-- ... Conteúdo ... -->
+            </div>
+
+            <!-- Atletas Professor -->
+            <div id="athletesTab" class="dash-tab-content">
+                <!-- ... Conteúdo ... -->
+            </div>
+
+            <!-- Conhecimento Professor -->
+            <div id="knowledgeProfessorTab" class="dash-tab-content">
+                <!-- ... Conteúdo ... -->
+            </div>
         </div>
     </div>
 
-
     <!-- Modais -->
-    <!-- ... (todos os modais existentes: addUserModal, addAthleteModal, etc.) ... -->
+    <div id="addAthleteModal" class="modal"><!-- Conteúdo do modal --></div>
+    <div id="goalsModal" class="modal"><!-- Conteúdo do modal --></div>
+    <div id="addUserModal" class="modal"><!-- Conteúdo do modal --></div>
+    <div id="uploadKnowledgeModal" class="modal"><!-- Conteúdo do modal --></div>
+    <div id="viewKnowledgeModal" class="modal"><!-- Conteúdo do modal --></div>
 
-    <!-- NOVO: Modal de Confirmação Genérico -->
+    <!-- Modal de Confirmação Genérico -->
     <div id="confirmationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -229,7 +258,6 @@
         </div>
     </div>
 
-
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner">
@@ -243,18 +271,13 @@
         <p>Desenvolvido com IA por thIAguinho Soluções</p>
     </footer>
 
-    <!-- Firebase SDK (versão 8 é mantida para evitar refatoração completa, mas v9+ é recomendado) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-    <!-- 
-      CORREÇÃO CRÍTICA: Ordem de Carregamento dos Scripts 
-      1. config.js: Define as configurações.
-      2. app.js: Inicializa o Firebase e as funções globais.
-      3. Demais scripts: Agora podem usar as variáveis e funções inicializadas com segurança.
-    -->
+    <!-- Scripts da Aplicação (ORDEM CORRIGIDA) -->
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
@@ -263,4 +286,5 @@
     <script src="js/admin.js"></script>
 </body>
 </html>
+
 
