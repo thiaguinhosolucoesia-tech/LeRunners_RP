@@ -3,7 +3,7 @@ const FIREBASE_CONFIG = {
     authDomain: "lerunners-4725f.firebaseapp.com",
     databaseURL: "https://lerunners-4725f-default-rtdb.firebaseio.com",
     projectId: "lerunners-4725f",
-    storageBucket: "lerunners-4725f.firebasestorage.app",
+    storageBucket: "lerunners-4725f.appspot.com",
     messagingSenderId: "490740324975",
     appId: "1:490740324975:web:c354dcdcd334c049a58b9a"
 };
@@ -18,20 +18,17 @@ const STRAVA_CONFIG = {
     apiUrl: 'https://www.strava.com/api/v3'
 };
 
-// Credenciais do Administrador Mestre (para login inicial)
-// ATENÇÃO: Em um ambiente de produção, estas credenciais não devem ser hardcoded no cliente.
-// Devem ser gerenciadas de forma segura (ex: variáveis de ambiente no servidor ou Firebase Remote Config).
 const MASTER_ADMIN_CREDENTIALS = {
-    email: "admin@lerunners.com", // Email padrão para o administrador mestre
-    password: "admin123" // Senha padrão para o administrador mestre
+    email: "admin@lerunners.com",
+    password: "admin123"
 };
 
-// Referências globais (serão inicializadas em app.js)
+// Referências globais
 let auth;
 let database;
 let storage;
 
-// Estado global da aplicação
+// Estado global
 window.appState = {
     currentUser: null,
     userType: null,
@@ -41,4 +38,3 @@ window.appState = {
     stravaData: null,
     knowledgeBase: []
 };
-
