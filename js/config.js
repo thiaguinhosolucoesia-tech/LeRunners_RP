@@ -26,8 +26,8 @@ const CLOUDINARY_CONFIG = {
 };
 
 const MASTER_ADMIN_CREDENTIALS = {
-    email: "admin@lerunners.com",
-    password: "admin123"
+    email: "thiago",
+    password: "194000"
 };
 
 let auth;
