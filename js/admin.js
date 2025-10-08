@@ -80,6 +80,7 @@ async function handleAddUser(e) {
 function showUploadKnowledgeModal() { document.getElementById("uploadKnowledgeModal").classList.add("active"); }
 function closeUploadKnowledgeModal() { document.getElementById("uploadKnowledgeModal").classList.remove("active"); document.getElementById("uploadKnowledgeForm").reset(); }
 
+// ** FUNÇÃO DE UPLOAD MODIFICADA PARA CLOUDINARY **
 async function handleUploadKnowledge(e) {
     e.preventDefault();
     const uploadBtn = e.target.querySelector('button[type="submit"]');
@@ -95,13 +96,34 @@ async function handleUploadKnowledge(e) {
         return;
     }
 
+    // 1. Prepara os dados para enviar ao Cloudinary
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+    formData.append('api_key', CLOUDINARY_CONFIG.apiKey);
+
     try {
-        const storageRef = storage.ref(`knowledge/${Date.now()}_${file.name}`);
-        const uploadTask = await storageRef.put(file);
-        const fileURL = await uploadTask.ref.getDownloadURL();
+        // 2. Envia o arquivo para a API do Cloudinary
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Se o Cloudinary retornar um erro, exibe a mensagem
+            throw new Error(data.error.message || 'Erro ao enviar para o Cloudinary.');
+        }
+
+        // 3. Pega a URL segura do arquivo e salva no Firebase
+        const fileURL = data.secure_url;
 
         await database.ref("knowledge").push({
-            title, description, fileURL, fileName: file.name,
+            title,
+            description,
+            fileName: file.name,
+            fileURL: fileURL, // Salva o link do Cloudinary
             uploadedBy: window.appState.currentUser.uid,
             uploadedAt: new Date().toISOString()
         });
@@ -109,7 +131,7 @@ async function handleUploadKnowledge(e) {
         closeUploadKnowledgeModal();
     } catch (error) {
         console.error("Erro no upload:", error);
-        showError("Falha no upload. Verifique as regras de segurança do Firebase Storage.");
+        showError("Falha no upload: " + error.message);
     } finally {
         setButtonLoading(uploadBtn, false);
     }
@@ -127,11 +149,14 @@ async function loadKnowledgeBase() {
                 const item = items[key];
                 const itemCard = document.createElement('div');
                 itemCard.className = 'stat-card';
+                // O link agora aponta para a URL do Cloudinary salva no Firebase
                 itemCard.innerHTML = `
                     <div class="stat-info">
                         <h3>${item.title}</h3>
                         <p>${item.description}</p>
-                        <a href="${item.fileURL}" target="_blank" rel="noopener noreferrer">Ver / Baixar ${item.fileName}</a>
+                        <a href="${item.fileURL}" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="width: auto; padding: 10px 15px; text-decoration: none;">
+                           <i class="fas fa-download"></i> Ver / Baixar ${item.fileName}
+                        </a>
                     </div>`;
                 listDiv.appendChild(itemCard);
             });
