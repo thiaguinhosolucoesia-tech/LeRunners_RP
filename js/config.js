@@ -18,17 +18,22 @@ const STRAVA_CONFIG = {
     apiUrl: 'https://www.strava.com/api/v3'
 };
 
-const MASTER_ADMIN_CREDENTIALS = {
-    email: "thiagoventuravalencio@gmail.com",
-    password: "157419"
+// ** NOVO: CONFIGURAÇÃO DO CLOUDINARY **
+const CLOUDINARY_CONFIG = {
+    cloudName: "dpaayfwlj",      // Encontre no seu Dashboard do Cloudinary
+    apiKey: "958375234747598",            // Encontre no seu Dashboard do Cloudinary
+    uploadPreset: "LeRunners" // O nome do preset que você vai criar (veja README)
 };
 
-// Referências globais
+const MASTER_ADMIN_CREDENTIALS = {
+    email: "admin@lerunners.com",
+    password: "admin123"
+};
+
 let auth;
 let database;
 let storage;
 
-// Estado global
 window.appState = {
     currentUser: null,
     userType: null,
