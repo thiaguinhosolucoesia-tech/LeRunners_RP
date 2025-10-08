@@ -2,6 +2,7 @@ async function loadAdminDashboard() {
     showLoading(true);
     document.getElementById("adminWelcome").textContent = `Olá, ${window.appState.currentUser.name || 'Admin'}!`;
     
+    // Anexa os event listeners aos formulários dos modais do admin
     document.getElementById('addUserForm').addEventListener('submit', handleAddUser);
     document.getElementById('uploadKnowledgeForm').addEventListener('submit', handleUploadKnowledge);
     
@@ -54,6 +55,7 @@ async function loadAdminUsers() {
 function showAddUserModal() { document.getElementById("addUserModal").classList.add("active"); }
 function closeAddUserModal() { document.getElementById("addUserModal").classList.remove("active"); document.getElementById("addUserForm").reset(); }
 
+// ** FUNÇÃO DE CRIAR USUÁRIO CORRIGIDA **
 async function handleAddUser(e) {
     e.preventDefault();
     const addUserBtn = e.target.querySelector('button[type="submit"]');
@@ -64,15 +66,30 @@ async function handleAddUser(e) {
     const password = document.getElementById("newUserPassword").value;
     const type = document.getElementById("newUserType").value;
 
+    // 1. Cria uma instância temporária e secundária do Firebase App.
+    // Isso é crucial para criar um usuário sem deslogar o admin atual.
+    const secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, 'secondary-auth-app');
+
     try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        await database.ref(`users/${user.uid}`).set({ name, email, type, createdAt: new Date().toISOString() });
-        showSuccess(`Usuário ${name} (${type}) adicionado com sucesso!`);
+        // 2. Cria o usuário usando a instância secundária.
+        const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+        const newUser = userCredential.user;
+
+        // 3. Salva os dados do novo usuário no Realtime Database usando a conexão principal.
+        await database.ref(`users/${newUser.uid}`).set({ 
+            name, 
+            email, 
+            type, 
+            createdAt: new Date().toISOString() 
+        });
+
+        showSuccess(`Usuário ${name} (${type}) criado com sucesso!`);
         closeAddUserModal();
     } catch (error) {
         showError(getErrorMessage(error));
     } finally {
+        // 4. Deleta a instância secundária para limpar recursos.
+        secondaryApp.delete();
         setButtonLoading(addUserBtn, false);
     }
 }
@@ -80,7 +97,6 @@ async function handleAddUser(e) {
 function showUploadKnowledgeModal() { document.getElementById("uploadKnowledgeModal").classList.add("active"); }
 function closeUploadKnowledgeModal() { document.getElementById("uploadKnowledgeModal").classList.remove("active"); document.getElementById("uploadKnowledgeForm").reset(); }
 
-// ** FUNÇÃO DE UPLOAD MODIFICADA PARA CLOUDINARY **
 async function handleUploadKnowledge(e) {
     e.preventDefault();
     const uploadBtn = e.target.querySelector('button[type="submit"]');
@@ -96,45 +112,31 @@ async function handleUploadKnowledge(e) {
         return;
     }
 
-    // 1. Prepara os dados para enviar ao Cloudinary
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-    formData.append('api_key', CLOUDINARY_CONFIG.apiKey);
-
-    try {
-        // 2. Envia o arquivo para a API do Cloudinary
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`, {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            // Se o Cloudinary retornar um erro, exibe a mensagem
-            throw new Error(data.error.message || 'Erro ao enviar para o Cloudinary.');
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+        try {
+            const fileContentBase64 = reader.result;
+            await database.ref("knowledge").push({
+                title,
+                description,
+                fileName: file.name,
+                fileContent: fileContentBase64,
+                uploadedAt: new Date().toISOString()
+            });
+            showSuccess("Arquivo enviado com sucesso!");
+            closeUploadKnowledgeModal();
+        } catch (error) {
+            console.error("Erro no upload para o Realtime DB:", error);
+            showError("Falha no upload. O arquivo pode ser muito grande.");
+        } finally {
+            setButtonLoading(uploadBtn, false);
         }
-
-        // 3. Pega a URL segura do arquivo e salva no Firebase
-        const fileURL = data.secure_url;
-
-        await database.ref("knowledge").push({
-            title,
-            description,
-            fileName: file.name,
-            fileURL: fileURL, // Salva o link do Cloudinary
-            uploadedBy: window.appState.currentUser.uid,
-            uploadedAt: new Date().toISOString()
-        });
-        showSuccess("Arquivo enviado com sucesso!");
-        closeUploadKnowledgeModal();
-    } catch (error) {
-        console.error("Erro no upload:", error);
-        showError("Falha no upload: " + error.message);
-    } finally {
+    };
+    reader.onerror = () => {
+        showError("Erro ao ler o arquivo.");
         setButtonLoading(uploadBtn, false);
-    }
+    };
 }
 
 async function loadKnowledgeBase() {
@@ -149,13 +151,12 @@ async function loadKnowledgeBase() {
                 const item = items[key];
                 const itemCard = document.createElement('div');
                 itemCard.className = 'stat-card';
-                // O link agora aponta para a URL do Cloudinary salva no Firebase
                 itemCard.innerHTML = `
                     <div class="stat-info">
                         <h3>${item.title}</h3>
                         <p>${item.description}</p>
-                        <a href="${item.fileURL}" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="width: auto; padding: 10px 15px; text-decoration: none;">
-                           <i class="fas fa-download"></i> Ver / Baixar ${item.fileName}
+                        <a href="${item.fileContent}" download="${item.fileName}" class="btn-secondary" style="width: auto; padding: 10px 15px; text-decoration: none;">
+                           <i class="fas fa-download"></i> Baixar ${item.fileName}
                         </a>
                     </div>`;
                 listDiv.appendChild(itemCard);
