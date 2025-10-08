@@ -1,12 +1,9 @@
 // ** FUNÇÕES DOS DASHBOARDS DE ATLETA E PROFESSOR **
 
-// Carrega o painel do atleta
 async function loadAthleteDashboard() {
-    showLoading(true);
     const welcomeEl = document.getElementById("atletaWelcome");
     if (welcomeEl) welcomeEl.textContent = `Olá, ${window.appState.currentUser.name}!`;
     
-    // Anexa listeners de eventos que só existem neste dashboard
     const stravaCard = document.getElementById('stravaCard');
     if (stravaCard) {
         stravaCard.addEventListener('click', (e) => {
@@ -17,12 +14,9 @@ async function loadAthleteDashboard() {
     await checkStravaConnection();
     await loadAthleteGoals();
     await loadKnowledgeBaseForUser('knowledgeListAthlete');
-    showLoading(false);
 }
 
-// Carrega o painel do professor
 async function loadProfessorDashboard() {
-    showLoading(true);
     const welcomeEl = document.getElementById("professorWelcome");
     if(welcomeEl) welcomeEl.textContent = `Olá, ${window.appState.currentUser.name}!`;
     
@@ -34,10 +28,8 @@ async function loadProfessorDashboard() {
 
     await loadProfessorAthletes();
     await loadKnowledgeBaseForUser('knowledgeListProfessor');
-    showLoading(false);
 }
 
-// Carrega os objetivos do atleta logado
 async function loadAthleteGoals() {
     const goalsRef = database.ref(`users/${window.appState.currentUser.uid}/goals`);
     goalsRef.on("value", (snapshot) => {
@@ -46,18 +38,13 @@ async function loadAthleteGoals() {
         if (!goalsListDiv) return;
 
         if (goals && (goals.weeklyDistance || goals.targetRace)) {
-            goalsListDiv.innerHTML = `
-                <p><strong>Meta Semanal:</strong> ${goals.weeklyDistance || 'N/A'} km</p>
-                <p><strong>Prova Alvo:</strong> ${goals.targetRace || 'N/A'}</p>
-                <p><strong>Data da Prova:</strong> ${goals.raceDate ? new Date(goals.raceDate).toLocaleDateString() : 'N/A'}</p>
-            `;
+            goalsListDiv.innerHTML = `<p><strong>Meta Semanal:</strong> ${goals.weeklyDistance || 'N/A'} km</p><p><strong>Prova Alvo:</strong> ${goals.targetRace || 'N/A'}</p><p><strong>Data:</strong> ${goals.raceDate ? new Date(goals.raceDate).toLocaleDateString() : 'N/A'}</p>`;
         } else {
-            goalsListDiv.innerHTML = `<div class="empty-state"><i class="fas fa-bullseye"></i><p>Nenhum objetivo definido.</p><small>Peça para seu treinador definir seus objetivos.</small></div>`;
+            goalsListDiv.innerHTML = `<div class="empty-state"><i class="fas fa-bullseye"></i><p>Nenhum objetivo definido.</p></div>`;
         }
     });
 }
 
-// Carrega os atletas do professor logado
 async function loadProfessorAthletes() {
     const professorUid = window.appState.currentUser.uid;
     const athletesRef = database.ref("users").orderByChild("professorUid").equalTo(professorUid);
@@ -72,24 +59,15 @@ async function loadProfessorAthletes() {
                 const athlete = { uid, ...athletes[uid] };
                 const card = document.createElement("div");
                 card.className = "athlete-card";
-                card.innerHTML = `
-                    <div class="athlete-info">
-                        <h3>${athlete.name}</h3>
-                        <p>${athlete.email}</p>
-                    </div>
-                    <div class="athlete-actions">
-                        <button class="btn-secondary" onclick="openGoalsModal('${athlete.uid}', '${athlete.name}')"><i class="fas fa-bullseye"></i> Objetivos</button>
-                    </div>
-                `;
+                card.innerHTML = `<div class="athlete-info"><h3>${athlete.name}</h3><p>${athlete.email}</p></div><div class="athlete-actions"><button class="btn-secondary" onclick="openGoalsModal('${athlete.uid}', '${athlete.name}')"><i class="fas fa-bullseye"></i> Objetivos</button></div>`;
                 listDiv.appendChild(card);
             });
         } else {
-            listDiv.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>Nenhum atleta cadastrado.</p><small>Clique em "Adicionar Atleta" para começar.</small></div>`;
+            listDiv.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>Nenhum atleta cadastrado.</p></div>`;
         }
     });
 }
 
-// Carrega a base de conhecimento (Cérebro Inteligente)
 async function loadKnowledgeBaseForUser(elementId) {
     const knowledgeRef = database.ref("knowledge");
     knowledgeRef.on("value", (snapshot) => {
@@ -103,13 +81,7 @@ async function loadKnowledgeBaseForUser(elementId) {
                 const item = items[key];
                 const card = document.createElement('div');
                 card.className = 'knowledge-card';
-                card.innerHTML = `
-                    <h3>${item.title}</h3>
-                    <p>${item.description}</p>
-                    <a href="${item.fileContent}" download="${item.fileName}" class="btn-secondary">
-                       <i class="fas fa-download"></i> Baixar ${item.fileName}
-                    </a>
-                `;
+                card.innerHTML = `<h3>${item.title}</h3><p>${item.description}</p><a href="${item.fileContent}" download="${item.fileName}" class="btn-secondary"><i class="fas fa-download"></i> Baixar</a>`;
                 listDiv.appendChild(card);
             });
         } else {
@@ -118,12 +90,10 @@ async function loadKnowledgeBaseForUser(elementId) {
     });
 }
 
-// Lógica para adicionar atleta (função do professor)
 async function handleAddAthlete(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     setButtonLoading(btn, true);
-
     const name = document.getElementById("athleteName").value;
     const email = document.getElementById("athleteEmail").value;
     const password = document.getElementById("athletePassword").value;
@@ -131,12 +101,8 @@ async function handleAddAthlete(e) {
     const secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, `add-athlete-${Date.now()}`);
     try {
         const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
-        const newUser = userCredential.user;
-        
-        await database.ref(`users/${newUser.uid}`).set({ 
-            name, email, type: 'atleta', 
-            professorUid: window.appState.currentUser.uid,
-            createdAt: new Date().toISOString() 
+        await database.ref(`users/${userCredential.user.uid}`).set({ 
+            name, email, type: 'atleta', professorUid: window.appState.currentUser.uid, createdAt: new Date().toISOString() 
         });
         showSuccess(`Atleta ${name} criado com sucesso!`);
         closeAddAthleteModal();
@@ -148,24 +114,20 @@ async function handleAddAthlete(e) {
     }
 }
 
-// Lógica para definir objetivos (função do professor)
 let currentAthleteUidForGoals = null;
 async function handleSetGoals(e) {
     e.preventDefault();
     if (!currentAthleteUidForGoals) return;
-
     const btn = e.target.querySelector('button[type="submit"]');
     setButtonLoading(btn, true);
-
     const goals = {
         weeklyDistance: document.getElementById('weeklyDistance').value,
         targetRace: document.getElementById('targetRace').value,
         raceDate: document.getElementById('raceDate').value
     };
-
     try {
         await database.ref(`users/${currentAthleteUidForGoals}/goals`).set(goals);
-        showSuccess("Objetivos salvos com sucesso!");
+        showSuccess("Objetivos salvos!");
         closeGoalsModal();
     } catch (error) {
         showError("Erro ao salvar os objetivos.");
@@ -179,9 +141,8 @@ function showAddAthleteModal() { document.getElementById("addAthleteModal").clas
 function closeAddAthleteModal() { document.getElementById("addAthleteModal").classList.remove("active"); document.getElementById('addAthleteForm').reset(); }
 function openGoalsModal(athleteUid, athleteName) {
     currentAthleteUidForGoals = athleteUid;
-    document.getElementById('goalsAthleteName').textContent = `Definir Metas para ${athleteName}`;
+    document.getElementById('goalsAthleteName').textContent = `Metas para ${athleteName}`;
     document.getElementById('goalsForm').reset();
-    
     database.ref(`users/${athleteUid}/goals`).once('value').then(snapshot => {
         if(snapshot.exists()) {
             const goals = snapshot.val();
@@ -190,7 +151,6 @@ function openGoalsModal(athleteUid, athleteName) {
             document.getElementById('raceDate').value = goals.raceDate || '';
         }
     });
-
     document.getElementById("goalsModal").classList.add("active");
 }
 function closeGoalsModal() { document.getElementById("goalsModal").classList.remove("active"); currentAthleteUidForGoals = null; }
