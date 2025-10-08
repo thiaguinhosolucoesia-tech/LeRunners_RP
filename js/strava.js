@@ -7,7 +7,7 @@ function getStravaAuthUrl() {
         redirect_uri: STRAVA_CONFIG.redirectUri,
         response_type: 'code',
         scope: STRAVA_CONFIG.scope,
-        approval_prompt: 'force' // 'force' para garantir que o usuário veja a tela de permissão
+        approval_prompt: 'force'
     });
     return `${STRAVA_CONFIG.authUrl}?${params.toString()}`;
 }
@@ -23,7 +23,6 @@ async function checkForStravaCode() {
     const code = params.get('code');
     if (code) {
         showLoading(true);
-        // Limpa a URL para remover o código e evitar reprocessamento
         window.history.replaceState({}, document.title, window.location.pathname);
         await handleStravaCallback(code);
         showLoading(false);
@@ -44,7 +43,7 @@ async function handleStravaCallback(code) {
             })
         });
         const tokenData = await response.json();
-        if (!response.ok) throw new Error(tokenData.message);
+        if (!response.ok) throw new Error(tokenData.message || 'Erro desconhecido do Strava');
 
         const stravaInfo = {
             accessToken: tokenData.access_token,
@@ -65,15 +64,15 @@ async function handleStravaCallback(code) {
 
 // Verifica a conexão existente e atualiza a UI
 async function checkStravaConnection() {
-    const stravaRef = database.ref(`users/${window.appState.currentUser.uid}/strava`);
-    const snapshot = await stravaRef.once('value');
-    if (snapshot.exists()) {
-        window.appState.stravaData = snapshot.val();
-    } else {
-        window.appState.stravaData = null;
+    // Apenas executa se estiver no dashboard de atleta
+    if(document.getElementById('atletaDashboard').classList.contains('active')){
+        const stravaRef = database.ref(`users/${window.appState.currentUser.uid}/strava`);
+        const snapshot = await stravaRef.once('value');
+        window.appState.stravaData = snapshot.exists() ? snapshot.val() : null;
+        
+        updateStravaUICard();
+        await checkForStravaCode();
     }
-    updateStravaUICard();
-    await checkForStravaCode();
 }
 
 // Renderiza o card do Strava no painel do atleta
@@ -82,7 +81,6 @@ function updateStravaUICard() {
     if (!cardDiv) return;
 
     if (window.appState.stravaData) {
-        // Conectado
         cardDiv.innerHTML = `
             <div class="strava-connected">
                 <i class="fab fa-strava"></i>
@@ -92,7 +90,6 @@ function updateStravaUICard() {
             </div>
         `;
     } else {
-        // Desconectado
         cardDiv.innerHTML = `
             <div class="strava-disconnected">
                 <i class="fab fa-strava"></i>
