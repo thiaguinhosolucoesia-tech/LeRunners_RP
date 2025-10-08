@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeRunners - Gestão de Atletas</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Tela de Login -->
@@ -31,7 +31,7 @@
                     </div>
                     <button type="submit" class="btn-primary">
                         <span class="btn-text">Entrar</span>
-                        <span class="btn-loading">
+                        <span class="btn-loading" style="display: none;">
                             <i class="fas fa-spinner fa-spin"></i> Entrando...
                         </span>
                     </button>
@@ -70,64 +70,20 @@
                     <i class="fas fa-brain"></i> Cérebro Inteligente
                 </button>
             </div>
-
-            <!-- Visão Geral Admin -->
             <div id="adminOverviewTab" class="dash-tab-content active">
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="totalUsers">0</h3>
-                            <p>Total de Usuários</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="totalProfessors">0</h3>
-                            <p>Total de Professores</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-running"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="totalAthletesAdmin">0</h3>
-                            <p>Total de Atletas</p>
-                        </div>
-                    </div>
+                    <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-info"><h3 id="totalUsers">0</h3><p>Total de Usuários</p></div></div>
+                    <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-tie"></i></div><div class="stat-info"><h3 id="totalProfessors">0</h3><p>Total de Professores</p></div></div>
+                    <div class="stat-card"><div class="stat-icon"><i class="fas fa-running"></i></div><div class="stat-info"><h3 id="totalAthletesAdmin">0</h3><p>Total de Atletas</p></div></div>
                 </div>
             </div>
-
-            <!-- Usuários Admin -->
             <div id="adminUsersTab" class="dash-tab-content">
-                <div class="athletes-header">
-                    <h3><i class="fas fa-users-cog"></i> Gerenciar Usuários</h3>
-                    <button class="btn-primary" onclick="showAddUserModal()">
-                        <i class="fas fa-user-plus"></i> Adicionar Usuário
-                    </button>
-                </div>
-                <div id="adminUsersList">
-                    <!-- Usuários serão carregados aqui -->
-                </div>
+                <div class="athletes-header"><h3><i class="fas fa-users-cog"></i> Gerenciar Usuários</h3><button class="btn-primary" onclick="showAddUserModal()"><i class="fas fa-user-plus"></i> Adicionar Usuário</button></div>
+                <div class="athletes-grid" id="adminUsersList"></div>
             </div>
-
-            <!-- Cérebro Inteligente Admin -->
             <div id="adminKnowledgeTab" class="dash-tab-content">
-                <div class="activities-header">
-                    <h3><i class="fas fa-brain"></i> Cérebro Inteligente</h3>
-                    <button class="btn-primary" onclick="showUploadKnowledgeModal()">
-                        <i class="fas fa-upload"></i> Upload de Conhecimento
-                    </button>
-                </div>
-                <div id="knowledgeList">
-                    <!-- Lista de conhecimentos será carregada aqui -->
-                </div>
+                <div class="activities-header"><h3><i class="fas fa-brain"></i> Cérebro Inteligente</h3><button class="btn-primary" onclick="showUploadKnowledgeModal()"><i class="fas fa-upload"></i> Upload de Conhecimento</button></div>
+                <div id="knowledgeList"></div>
             </div>
         </div>
     </div>
@@ -138,53 +94,22 @@
             <div class="header-content">
                 <div class="header-left">
                     <div class="logo-small">LR</div>
-                    <div class="header-info">
-                        <h1 id="atletaWelcome">Olá, Atleta!</h1>
-                        <p>Seu painel de controle</p>
-                    </div>
+                    <div class="header-info"><h1 id="atletaWelcome">Olá, Atleta!</h1><p>Seu painel de controle</p></div>
                 </div>
-                <button class="btn-logout" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
             </div>
         </header>
         <div class="dashboard-content">
             <div class="dashboard-tabs">
-                <button class="dash-tab-btn active" onclick="showDashTab('overview')">
-                    <i class="fas fa-chart-line"></i> Visão Geral
-                </button>
-                <button class="dash-tab-btn" onclick="showDashTab('strava')">
-                    <i class="fab fa-strava"></i> Strava
-                </button>
-                <button class="dash-tab-btn" onclick="showDashTab('activities')">
-                    <i class="fas fa-running"></i> Atividades
-                </button>
-                <button class="dash-tab-btn" onclick="showDashTab('knowledgeAthlete')">
-                    <i class="fas fa-brain"></i> Conhecimento
-                </button>
+                <button class="dash-tab-btn active" onclick="showDashTab('overview')"><i class="fas fa-chart-line"></i> Visão Geral</button>
+                <button class="dash-tab-btn" onclick="showDashTab('strava')"><i class="fab fa-strava"></i> Strava</button>
+                <button class="dash-tab-btn" onclick="showDashTab('activities')"><i class="fas fa-running"></i> Atividades</button>
+                <button class="dash-tab-btn" onclick="showDashTab('knowledgeAthlete')"><i class="fas fa-brain"></i> Conhecimento</button>
             </div>
-
-            <!-- Visão Geral Atleta -->
-            <div id="overviewTab" class="dash-tab-content active">
-                <div class="stats-grid">
-                    <!-- ... Conteúdo ... -->
-                </div>
-            </div>
-
-            <!-- Strava Atleta -->
-            <div id="stravaTab" class="dash-tab-content">
-                <!-- ... Conteúdo ... -->
-            </div>
-
-            <!-- Atividades Atleta -->
-            <div id="activitiesTab" class="dash-tab-content">
-                <!-- ... Conteúdo ... -->
-            </div>
-
-            <!-- Conhecimento Atleta -->
-            <div id="knowledgeAthleteTab" class="dash-tab-content">
-                <!-- ... Conteúdo ... -->
-            </div>
+            <div id="overviewTab" class="dash-tab-content active"></div>
+            <div id="stravaTab" class="dash-tab-content"></div>
+            <div id="activitiesTab" class="dash-tab-content"></div>
+            <div id="knowledgeAthleteTab" class="dash-tab-content"></div>
         </div>
     </div>
 
@@ -194,63 +119,35 @@
             <div class="header-content">
                 <div class="header-left">
                     <div class="logo-small">LR</div>
-                    <div class="header-info">
-                        <h1 id="professorWelcome">Olá, Professor!</h1>
-                        <p>Gerencie seus atletas</p>
-                    </div>
+                    <div class="header-info"><h1 id="professorWelcome">Olá, Professor!</h1><p>Gerencie seus atletas</p></div>
                 </div>
-                <button class="btn-logout" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
             </div>
         </header>
         <div class="dashboard-content">
             <div class="dashboard-tabs">
-                <button class="dash-tab-btn active" onclick="showProfTab('overview')">
-                    <i class="fas fa-chart-line"></i> Visão Geral
-                </button>
-                <button class="dash-tab-btn" onclick="showProfTab('athletes')">
-                    <i class="fas fa-users"></i> Atletas
-                </button>
-                <button class="dash-tab-btn" onclick="showProfTab('knowledgeProfessor')">
-                    <i class="fas fa-brain"></i> Conhecimento
-                </button>
+                 <button class="dash-tab-btn active" onclick="showProfTab('overview')"><i class="fas fa-chart-line"></i> Visão Geral</button>
+                 <button class="dash-tab-btn" onclick="showProfTab('athletes')"><i class="fas fa-users"></i> Atletas</button>
+                 <button class="dash-tab-btn" onclick="showProfTab('knowledgeProfessor')"><i class="fas fa-brain"></i> Conhecimento</button>
             </div>
-
-            <!-- Visão Geral Professor -->
-            <div id="profOverviewTab" class="dash-tab-content active">
-                <!-- ... Conteúdo ... -->
-            </div>
-
-            <!-- Atletas Professor -->
-            <div id="athletesTab" class="dash-tab-content">
-                <!-- ... Conteúdo ... -->
-            </div>
-
-            <!-- Conhecimento Professor -->
-            <div id="knowledgeProfessorTab" class="dash-tab-content">
-                <!-- ... Conteúdo ... -->
-            </div>
+            <div id="profOverviewTab" class="dash-tab-content active"></div>
+            <div id="athletesTab" class="dash-tab-content"></div>
+            <div id="knowledgeProfessorTab" class="dash-tab-content"></div>
         </div>
     </div>
 
-    <!-- Modais -->
-    <div id="addAthleteModal" class="modal"><!-- Conteúdo do modal --></div>
-    <div id="goalsModal" class="modal"><!-- Conteúdo do modal --></div>
-    <div id="addUserModal" class="modal"><!-- Conteúdo do modal --></div>
-    <div id="uploadKnowledgeModal" class="modal"><!-- Conteúdo do modal --></div>
-    <div id="viewKnowledgeModal" class="modal"><!-- Conteúdo do modal --></div>
+    <!-- Modals -->
+    <div id="addAthleteModal" class="modal"></div>
+    <div id="goalsModal" class="modal"></div>
+    <div id="addUserModal" class="modal"></div>
+    <div id="uploadKnowledgeModal" class="modal"></div>
+    <div id="viewKnowledgeModal" class="modal"></div>
 
     <!-- Modal de Confirmação Genérico -->
     <div id="confirmationModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Confirmação</h3>
-                <button class="modal-close" onclick="closeConfirmationModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmationMessage">Você tem certeza?</p>
-            </div>
+            <div class="modal-header"><h3>Confirmação</h3><button class="modal-close" onclick="closeConfirmationModal()"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body"><p id="confirmationMessage">Você tem certeza?</p></div>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" onclick="closeConfirmationModal()">Cancelar</button>
                 <button type="button" id="confirmActionBtn" class="btn-danger">Confirmar</button>
@@ -260,22 +157,17 @@
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Carregando...</p>
-        </div>
+        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <p>Desenvolvido com IA por thIAguinho Soluções</p>
-    </footer>
+    <footer class="footer"><p>Desenvolvido com IA por thIAguinho Soluções</p></footer>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
     <!-- Scripts da Aplicação (ORDEM CORRIGIDA) -->
     <script src="js/config.js"></script>
