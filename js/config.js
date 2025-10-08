@@ -19,8 +19,8 @@ const STRAVA_CONFIG = {
 };
 
 const MASTER_ADMIN_CREDENTIALS = {
-    email: "admin@lerunners.com",
-    password: "admin123"
+    email: "thiagoventuravalencio@gmail.com",
+    password: "157419"
 };
 
 // Referências globais
