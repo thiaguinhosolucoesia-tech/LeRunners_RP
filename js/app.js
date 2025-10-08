@@ -1,88 +1,78 @@
 // Arquivo principal da aplicação
-let selectedAthleteUid = null;
-let confirmCallback = null;
 
+// Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', function() {
     firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth();
     database = firebase.database();
     storage = firebase.storage();
 
-    initializeApp();
-    setupEventListeners();
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
 });
 
-function initializeApp() {
-    showScreen('loginScreen');
-}
-
-function setupEventListeners() {
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('confirmActionBtn').addEventListener('click', () => {
-        if (typeof confirmCallback === 'function') {
-            confirmCallback();
-        }
-        closeConfirmationModal();
-    });
-    // Adicionar outros listeners para modais e formulários conforme necessário
-}
-
+// Manipular login
 async function handleLogin(e) {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
+    
+    const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+    
     const loginBtn = e.target.querySelector('button[type="submit"]');
     setButtonLoading(loginBtn, true);
     
-    try {
-        const success = await loginUser(email, password);
-        if (success) {
-            e.target.reset();
-        }
-    } finally {
-        setButtonLoading(loginBtn, false);
-    }
+    await loginUser(email, password);
+    
+    setButtonLoading(loginBtn, false);
 }
 
+// Mostrar tela
 function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-    document.getElementById(screenId)?.classList.add('active');
-}
-
-async function showDashboard(userType) {
-    const dashboards = {
-        admin: { id: 'adminDashboard', load: loadAdminDashboard },
-        professor: { id: 'professorDashboard', load: loadProfessorDashboard },
-        atleta: { id: 'atletaDashboard', load: loadAthleteDashboard }
-    };
-    if (dashboards[userType]) {
-        showScreen(dashboards[userType].id);
-        await dashboards[userType].load();
-    } else {
-        showScreen('loginScreen');
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+    const screenToShow = document.getElementById(screenId);
+    if (screenToShow) {
+        screenToShow.classList.add('active');
     }
 }
 
-function showConfirmationModal(message, onConfirm) {
-    document.getElementById('confirmationMessage').textContent = message;
-    confirmCallback = onConfirm;
-    document.getElementById('confirmationModal').classList.add('active');
+// Mostrar dashboard correto após login
+async function showDashboard(userType) {
+    switch (userType) {
+        case 'admin':
+            showScreen('adminDashboard');
+            await loadAdminDashboard();
+            break;
+        case 'professor':
+            showScreen('professorDashboard');
+            // await loadProfessorDashboard(); // Descomente quando a função for implementada
+            break;
+        case 'atleta':
+            showScreen('atletaDashboard');
+            // await loadAthleteDashboard(); // Descomente quando a função for implementada
+            break;
+        default:
+            showScreen('loginScreen');
+            break;
+    }
 }
 
-function closeConfirmationModal() {
-    document.getElementById('confirmationModal').classList.remove('active');
-    confirmCallback = null;
-}
-
+// Funções de UI genéricas
 function showLoading(show) {
-    document.getElementById('loadingOverlay').classList.toggle('active', show);
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.toggle('active', show);
+    }
 }
 
 function setButtonLoading(button, loading) {
-    if (button) {
-        button.classList.toggle('loading', loading);
-        button.disabled = loading;
-    }
+    if (!button) return;
+    button.disabled = loading;
+    const btnText = button.querySelector('.btn-text');
+    const btnLoading = button.querySelector('.btn-loading');
+
+    if(btnText) btnText.style.display = loading ? 'none' : 'inline';
+    if(btnLoading) btnLoading.style.display = loading ? 'inline' : 'none';
 }
 
 function showError(message) {
@@ -91,5 +81,20 @@ function showError(message) {
         errorEl.textContent = message;
         errorEl.style.display = 'block';
         setTimeout(() => { errorEl.style.display = 'none'; }, 5000);
+    } else {
+        alert('Erro: ' + message);
     }
+}
+
+function showSuccess(message) {
+    const successEl = document.createElement('div');
+    successEl.className = 'success-message';
+    successEl.innerHTML = `<i class="fas fa-check-circle"></i><span>${message}</span>`;
+    document.body.appendChild(successEl);
+    
+    setTimeout(() => {
+        if (successEl.parentNode) {
+            successEl.parentNode.removeChild(successEl);
+        }
+    }, 3000);
 }
