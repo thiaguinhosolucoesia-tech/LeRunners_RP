@@ -26,7 +26,7 @@ const CLOUDINARY_CONFIG = {
 };
 
 const MASTER_ADMIN_CREDENTIALS = {
-    email: "thiago",
+    email: "thiagoventuravalencio@gmail.com",
     password: "194000"
 };
 
