@@ -3,12 +3,16 @@
 // Carrega o painel do atleta
 async function loadAthleteDashboard() {
     showLoading(true);
-    document.getElementById("atletaWelcome").textContent = `Olá, ${window.appState.currentUser.name}!`;
+    const welcomeEl = document.getElementById("atletaWelcome");
+    if (welcomeEl) welcomeEl.textContent = `Olá, ${window.appState.currentUser.name}!`;
     
     // Anexa listeners de eventos que só existem neste dashboard
-    document.getElementById('stravaCard').addEventListener('click', (e) => {
-        if (e.target.id === 'connectStravaBtn') connectStrava();
-    });
+    const stravaCard = document.getElementById('stravaCard');
+    if (stravaCard) {
+        stravaCard.addEventListener('click', (e) => {
+            if (e.target.id === 'connectStravaBtn') connectStrava();
+        });
+    }
 
     await checkStravaConnection();
     await loadAthleteGoals();
@@ -19,11 +23,14 @@ async function loadAthleteDashboard() {
 // Carrega o painel do professor
 async function loadProfessorDashboard() {
     showLoading(true);
-    document.getElementById("professorWelcome").textContent = `Olá, ${window.appState.currentUser.name}!`;
+    const welcomeEl = document.getElementById("professorWelcome");
+    if(welcomeEl) welcomeEl.textContent = `Olá, ${window.appState.currentUser.name}!`;
     
-    // Anexa listeners de eventos que só existem neste dashboard
-    document.getElementById('addAthleteForm').addEventListener('submit', handleAddAthlete);
-    document.getElementById('goalsForm').addEventListener('submit', handleSetGoals);
+    const addAthleteForm = document.getElementById('addAthleteForm');
+    if (addAthleteForm) addAthleteForm.addEventListener('submit', handleAddAthlete);
+    
+    const goalsForm = document.getElementById('goalsForm');
+    if (goalsForm) goalsForm.addEventListener('submit', handleSetGoals);
 
     await loadProfessorAthletes();
     await loadKnowledgeBaseForUser('knowledgeListProfessor');
@@ -121,14 +128,14 @@ async function handleAddAthlete(e) {
     const email = document.getElementById("athleteEmail").value;
     const password = document.getElementById("athletePassword").value;
     
-    const secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, 'secondary-add-athlete');
+    const secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, `add-athlete-${Date.now()}`);
     try {
         const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
         const newUser = userCredential.user;
         
         await database.ref(`users/${newUser.uid}`).set({ 
             name, email, type: 'atleta', 
-            professorUid: window.appState.currentUser.uid, // Associa o atleta ao professor
+            professorUid: window.appState.currentUser.uid,
             createdAt: new Date().toISOString() 
         });
         showSuccess(`Atleta ${name} criado com sucesso!`);
@@ -173,10 +180,8 @@ function closeAddAthleteModal() { document.getElementById("addAthleteModal").cla
 function openGoalsModal(athleteUid, athleteName) {
     currentAthleteUidForGoals = athleteUid;
     document.getElementById('goalsAthleteName').textContent = `Definir Metas para ${athleteName}`;
-    // Limpa o formulário antes de abrir
     document.getElementById('goalsForm').reset();
     
-    // Carrega os objetivos existentes, se houver
     database.ref(`users/${athleteUid}/goals`).once('value').then(snapshot => {
         if(snapshot.exists()) {
             const goals = snapshot.val();
@@ -193,13 +198,13 @@ function closeGoalsModal() { document.getElementById("goalsModal").classList.rem
 // Funções de navegação por abas
 function showDashTab(tabName) {
     document.querySelectorAll('#atletaDashboard .dash-tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    event.currentTarget.classList.add('active');
     document.querySelectorAll('#atletaDashboard .dash-tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabName + 'Tab').classList.add('active');
 }
 function showProfTab(tabName) {
     document.querySelectorAll('#professorDashboard .dash-tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    event.currentTarget.classList.add('active');
     document.querySelectorAll('#professorDashboard .dash-tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabName + 'Tab').classList.add('active');
 }
