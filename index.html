@@ -1,90 +1,341 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeRunners - Gestão de Atletas</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Tela de Login -->
-    <div id="loginScreen" class="screen active">
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-header"><div class="logo"><i class="fas fa-trophy"></i></div><h1>LeRunners</h1><p>Gestão de Atletas e Treinamentos</p></div>
-                <div id="loginTab" class="tab-content active">
-                    <form id="loginForm">
-                        <div class="form-group"><label for="loginEmail">Email</label><input type="email" id="loginEmail" required></div>
-                        <div class="form-group"><label for="loginPassword">Senha</label><input type="password" id="loginPassword" required></div>
-                        <button type="submit" class="btn-primary"><span class="btn-text">Entrar</span><span class="btn-loading" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Entrando...</span></button>
-                    </form>
-                </div>
-                <div id="errorMessage" class="error-message" style="display: none;"></div>
-            </div>
-        </div>
-    </div>
+const App = {
+    state: { 
+        userId: null,
+        db: null,
+        displayedDate: new Date(), 
+        isEditing: true, 
+        inventory: {} 
+    },
+    elements: {},
 
-    <!-- Admin Dashboard Screen -->
-    <div id="adminDashboard" class="screen">
-        <header class="dashboard-header"><div class="header-content"><div class="header-left"><div class="logo-small">LR</div><div class="header-info"><h1 id="adminWelcome"></h1><p>Gerencie a plataforma</p></div></div><button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button></div></header>
-        <div class="dashboard-content">
-            <div class="dashboard-tabs">
-                <button class="dash-tab-btn active" onclick="showAdminTab('overview')"><i class="fas fa-chart-line"></i> Visão Geral</button>
-                <button class="dash-tab-btn" onclick="showAdminTab('users')"><i class="fas fa-users-cog"></i> Usuários</button>
-                <button class="dash-tab-btn" onclick="showAdminTab('knowledge')"><i class="fas fa-brain"></i> Cérebro Inteligente</button>
-            </div>
-            <div id="adminOverviewTab" class="dash-tab-content active"><div class="stats-grid"><div class="stat-card"><div class="stat-icon" style="background: #667eea;"><i class="fas fa-users"></i></div><div class="stat-info"><h3 id="totalUsers">0</h3><p>Usuários Totais</p></div></div><div class="stat-card"><div class="stat-icon" style="background: #20c997;"><i class="fas fa-user-tie"></i></div><div class="stat-info"><h3 id="totalProfessors">0</h3><p>Professores</p></div></div><div class="stat-card"><div class="stat-icon" style="background: #ff6b6b;"><i class="fas fa-running"></i></div><div class="stat-info"><h3 id="totalAthletesAdmin">0</h3><p>Atletas</p></div></div></div></div>
-            <div id="adminUsersTab" class="dash-tab-content"><div class="athletes-header"><h3><i class="fas fa-users-cog"></i> Gerenciar Usuários</h3><button class="btn-primary" onclick="showAddUserModal()"><i class="fas fa-user-plus"></i> Adicionar Usuário</button></div><div class="athletes-grid" id="adminUsersList"></div></div>
-            <div id="adminKnowledgeTab" class="dash-tab-content"><div class="activities-header"><h3><i class="fas fa-brain"></i> Cérebro Inteligente</h3><button class="btn-primary" onclick="showUploadKnowledgeModal()"><i class="fas fa-upload"></i> Upload</button></div><div id="knowledgeList"></div></div>
-        </div>
-    </div>
+    init(user, firestoreInstance) {
+        // Esconde o ecrã de carregamento e mostra a aplicação
+        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('app-container').classList.remove('hidden');
 
-    <!-- Atleta Dashboard Screen -->
-    <div id="atletaDashboard" class="screen">
-        <header class="dashboard-header"><div class="header-content"><div class="header-left"><div class="logo-small">LR</div><div class="header-info"><h1 id="atletaWelcome"></h1><p>Seu painel de controle</p></div></div><button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button></div></header>
-        <div class="dashboard-content">
-            <div class="dashboard-tabs">
-                <button class="dash-tab-btn active" onclick="showDashTab('overview')"><i class="fas fa-chart-line"></i> Visão Geral</button>
-                <button class="dash-tab-btn" onclick="showDashTab('strava')"><i class="fab fa-strava"></i> Strava</button>
-                <button class="dash-tab-btn" onclick="showDashTab('knowledgeAthlete')"><i class="fas fa-brain"></i> Conhecimento</button>
-            </div>
-            <div id="overviewTab" class="dash-tab-content active"><div class="goals-card"><h3 class="card-title"><i class="fas fa-bullseye"></i> Meus Objetivos</h3><div id="goalsList"></div></div></div>
-            <div id="stravaTab" class="dash-tab-content"><div id="stravaCard" class="strava-card"></div></div>
-            <div id="knowledgeAthleteTab" class="dash-tab-content"><div class="knowledge-list" id="knowledgeListAthlete"></div></div>
-        </div>
-    </div>
+        // Armazena o ID do utilizador e a instância da base de dados
+        this.state.userId = user.uid;
+        this.state.db = firestoreInstance;
+        document.getElementById('userEmail').textContent = user.email;
 
-    <!-- Professor Dashboard Screen -->
-    <div id="professorDashboard" class="screen">
-        <header class="dashboard-header"><div class="header-content"><div class="header-left"><div class="logo-small">LR</div><div class="header-info"><h1 id="professorWelcome"></h1><p>Gerencie seus atletas</p></div></div><button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button></div></header>
-        <div class="dashboard-content">
-            <div class="dashboard-tabs">
-                <button class="dash-tab-btn active" onclick="showProfTab('athletes')"><i class="fas fa-users"></i> Atletas</button>
-                <button class="dash-tab-btn" onclick="showProfTab('knowledgeProfessor')"><i class="fas fa-brain"></i> Conhecimento</button>
-            </div>
-            <div id="athletesTab" class="dash-tab-content active"><div class="athletes-header"><h3><i class="fas fa-users"></i> Meus Atletas</h3><button class="btn-primary" onclick="showAddAthleteModal()"><i class="fas fa-user-plus"></i> Adicionar Atleta</button></div><div class="athletes-grid" id="athletesList"></div></div>
-            <div id="knowledgeProfessorTab" class="dash-tab-content"><div class="knowledge-list" id="knowledgeListProfessor"></div></div>
-        </div>
-    </div>
+        // Mapeia os elementos do DOM
+        this.elements = {
+            logoutButton: document.getElementById('logout-button'),
+            userEmail: document.getElementById('userEmail'),
+            currentDateDisplay: document.getElementById('currentDateDisplay'), prevDayBtn: document.getElementById('prevDayBtn'),
+            nextDayBtn: document.getElementById('nextDayBtn'),
+            planningFieldset: document.getElementById('planningFieldset'), reviewFieldset: document.getElementById('reviewFieldset'),
+            endDayBtn: document.getElementById('endDayBtn'), dailyFocus: document.getElementById('dailyFocus'),
+            criticalTasks: document.getElementById('criticalTasks'), todoList: document.getElementById('todo-list'),
+            newTodoInput: document.getElementById('new-todo-input'), addTodoBtn: document.getElementById('add-todo-btn'),
+            mainAchievement: document.getElementById('mainAchievement'), mainChallenge: document.getElementById('mainChallenge'),
+            kpiMatriculas: document.getElementById('kpiMatriculas'), kpiCancelamentos: document.getElementById('kpiCancelamentos'),
+            energyLevel: document.getElementById('energyLevel'), actionBankContent: document.getElementById('actionBank-content'),
+            weeklySummarySection: document.getElementById('weeklySummarySection'), weeklySummaryContent: document.getElementById('weeklySummaryContent'),
+            showWeeklySummaryBtn: document.getElementById('showWeeklySummaryBtn'),
+            materialSelect: document.getElementById('materialSelect'), materialQty: document.getElementById('materialQty'),
+            addStockBtn: document.getElementById('addStockBtn'), removeStockBtn: document.getElementById('removeStockBtn'),
+            inventoryTbody: document.getElementById('inventory-tbody'),
+            uploadFileBtn: document.getElementById('uploadFileBtn')
+        };
 
-    <!-- Modals -->
-    <div id="addUserModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Adicionar Novo Usuário</h3><button class="modal-close" onclick="closeAddUserModal()"><i class="fas fa-times"></i></button></div><div class="modal-body"><form id="addUserForm"><div class="form-group"><label for="newUserName">Nome</label><input type="text" id="newUserName" required></div><div class="form-group"><label for="newUserEmail">Email</label><input type="email" id="newUserEmail" required></div><div class="form-group"><label for="newUserPassword">Senha</label><input type="password" id="newUserPassword" required></div><div class="form-group"><label>Tipo de Usuário</label><select id="newUserType" class="form-control"><option value="atleta">Atleta</option><option value="professor">Professor</option></select></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeAddUserModal()">Cancelar</button><button type="submit" class="btn-primary">Adicionar Usuário</button></div></form></div></div></div>
-    <div id="uploadKnowledgeModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Upload de Conhecimento</h3><button class="modal-close" onclick="closeUploadKnowledgeModal()"><i class="fas fa-times"></i></button></div><div class="modal-body"><form id="uploadKnowledgeForm"><div class="form-group"><label for="knowledgeTitle">Título</label><input type="text" id="knowledgeTitle" required></div><div class="form-group"><label for="knowledgeDescription">Descrição</label><textarea id="knowledgeDescription" rows="3"></textarea></div><div class="form-group"><label for="knowledgeFile">Arquivo</label><input type="file" id="knowledgeFile" required></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeUploadKnowledgeModal()">Cancelar</button><button type="submit" class="btn-primary">Upload</button></div></form></div></div></div>
-    <div id="addAthleteModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Adicionar Novo Atleta</h3><button class="modal-close" onclick="closeAddAthleteModal()"><i class="fas fa-times"></i></button></div><div class="modal-body"><form id="addAthleteForm"><div class="form-group"><label for="athleteName">Nome</label><input type="text" id="athleteName" required></div><div class="form-group"><label for="athleteEmail">Email</label><input type="email" id="athleteEmail" required></div><div class="form-group"><label for="athletePassword">Senha Provisória</label><input type="password" id="athletePassword" required></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeAddAthleteModal()">Cancelar</button><button type="submit" class="btn-primary">Adicionar Atleta</button></div></form></div></div></div>
-    <div id="goalsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="goalsAthleteName"></h3><button class="modal-close" onclick="closeGoalsModal()"><i class="fas fa-times"></i></button></div><div class="modal-body"><form id="goalsForm"><div class="form-group"><label for="weeklyDistance">Distância Semanal (km)</label><input type="number" id="weeklyDistance" step="0.1"></div><div class="form-group"><label for="targetRace">Prova Alvo</label><input type="text" id="targetRace"></div><div class="form-group"><label for="raceDate">Data da Prova</label><input type="date" id="raceDate"></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeGoalsModal()">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div></form></div></div></div>
+        // Inicia as funcionalidades
+        this.populateActionBank();
+        this.populateMaterialSelect();
+        this.addEventListeners();
+        this.loadInventory();
+        this.renderDay(this.getDateString(this.state.displayedDate));
+    },
     
-    <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div></div>
-    <footer class="footer"><p>Desenvolvido com IA por thIAguinho Soluções</p></footer>
+    getDocRef(collection, docId) {
+        if (!this.state.userId) return null;
+        return this.state.db.collection('gestores').doc(this.state.userId).collection(collection).doc(docId);
+    },
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/strava.js"></script>
-</body>
-</html>
+    getDateString: date => date.toISOString().split('T')[0],
+    parseDateString: str => new Date(str + 'T12:00:00Z'),
+    
+    async fetchData(collection, docId) {
+        const docRef = this.getDocRef(collection, docId);
+        if (!docRef) return null;
+        const doc = await docRef.get();
+        return doc.exists ? doc.data() : null;
+    },
+
+    async saveData(collection, docId, data) {
+        const docRef = this.getDocRef(collection, docId);
+        if (docRef) await docRef.set(data, { merge: true });
+    },
+
+    async renderDay(dateString) {
+        this.state.displayedDate = this.parseDateString(dateString);
+        this.elements.currentDateDisplay.textContent = this.state.displayedDate.toLocaleDateString('pt-BR', { dateStyle: 'full' });
+        const data = await this.fetchData('diario', dateString);
+        const ddb = data?.diarioDeBordo || {};
+        this.elements.dailyFocus.value = ddb.dailyFocus || '';
+        this.elements.criticalTasks.value = ddb.criticalTasks || '';
+        this.elements.mainAchievement.value = ddb.mainAchievement || '';
+        this.elements.mainChallenge.value = ddb.mainChallenge || '';
+        this.elements.kpiMatriculas.value = ddb.kpiMatriculas || 0;
+        this.elements.kpiCancelamentos.value = ddb.kpiCancelamentos || 0;
+        this.elements.energyLevel.value = ddb.energyLevel || 3;
+        this.elements.todoList.innerHTML = '';
+        (ddb.todo || []).forEach(task => this.createTodoElement(task));
+        this.state.isEditing = !ddb.isFinalized;
+        this.toggleFieldsDisabled();
+    },
+
+    toggleFieldsDisabled() {
+        const isDisabled = !this.state.isEditing;
+        this.elements.planningFieldset.disabled = isDisabled;
+        this.elements.reviewFieldset.disabled = isDisabled;
+        const lockMessage = document.getElementById('lockMessage');
+        if (lockMessage) { lockMessage.remove(); }
+        if (isDisabled) {
+            this.elements.endDayBtn.textContent = 'Editar Dia';
+            this.elements.endDayBtn.classList.add('edit-mode');
+            const messageDiv = document.createElement('div');
+            messageDiv.id = 'lockMessage';
+            messageDiv.style.textAlign = 'center';
+            messageDiv.style.padding = '10px';
+            messageDiv.style.backgroundColor = 'var(--light-blue)';
+            messageDiv.style.borderRadius = '8px';
+            messageDiv.style.marginTop = '20px';
+            messageDiv.style.fontWeight = 'bold';
+            messageDiv.innerHTML = `🔒 Este dia foi finalizado. Clique em "Editar Dia" para fazer alterações.`;
+            this.elements.endDayBtn.parentElement.insertAdjacentElement('afterend', messageDiv);
+        } else {
+            this.elements.endDayBtn.textContent = 'Analisar e Finalizar Dia';
+            this.elements.endDayBtn.classList.remove('edit-mode');
+        }
+    },
+
+    addEventListeners() {
+        this.elements.logoutButton.addEventListener('click', () => firebase.auth().signOut());
+        this.elements.prevDayBtn.addEventListener('click', () => this.navigateDays(-1));
+        this.elements.nextDayBtn.addEventListener('click', () => this.navigateDays(1));
+        this.elements.addTodoBtn.addEventListener('click', () => this.addTodoItem());
+        this.elements.endDayBtn.addEventListener('click', () => this.handleFinalizeDay());
+        this.elements.showWeeklySummaryBtn.addEventListener('click', () => this.generateWeeklyAnalysis());
+        this.elements.addStockBtn.addEventListener('click', () => this.updateStock('add'));
+        this.elements.removeStockBtn.addEventListener('click', () => this.updateStock('remove'));
+        this.elements.uploadFileBtn.addEventListener('click', () => this.openUploadWidget());
+        this.elements.userEmail.addEventListener('click', () => this.promptForReset());
+        this.elements.userEmail.style.cursor = 'pointer';
+        this.elements.userEmail.title = 'Clique para opções de sistema';
+    },
+    
+    promptForReset() {
+        const code = prompt("Para aceder às opções de sistema, digite o código de segurança:");
+        if (code === '*177') {
+            const confirmation = prompt("ATENÇÃO: AÇÃO IRREVERSÍVEL!\nIsto irá apagar TODOS os seus diários e o seu inventário para SEMPRE.\n\nPara confirmar, digite 'APAGAR TUDO' e clique em OK.");
+            if (confirmation === 'APAGAR TUDO') {
+                this.hardResetUserData();
+            } else {
+                alert("Operação de reset cancelada.");
+            }
+        } else if (code !== null) {
+            alert("Código incorreto.");
+        }
+    },
+
+    async hardResetUserData() {
+        alert("A iniciar o reset completo do sistema. A página será recarregada ao concluir.");
+        try {
+            const deleteCollection = async (collectionPath) => {
+                const querySnapshot = await this.state.db.collection(collectionPath).get();
+                if (querySnapshot.empty) return;
+                const batch = this.state.db.batch();
+                querySnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+            };
+            await deleteCollection(`gestores/${this.state.userId}/diario`);
+            await deleteCollection(`gestores/${this.state.userId}/inventario`);
+            alert("Sistema resetado com sucesso.");
+            location.reload();
+        } catch (error) {
+            alert("Ocorreu um erro ao tentar resetar o sistema.");
+        }
+    },
+    
+    navigateDays(direction) {
+        this.state.displayedDate.setDate(this.state.displayedDate.getDate() + direction);
+        this.renderDay(this.getDateString(this.state.displayedDate));
+    },
+
+    addTodoItem(text = null) {
+        const taskText = text || this.elements.newTodoInput.value.trim();
+        if (taskText) {
+            this.createTodoElement({ text: taskText, completed: false });
+        }
+        if(!text) {
+            this.elements.newTodoInput.value = '';
+        }
+    },
+
+    createTodoElement(task) {
+        const li = document.createElement('li');
+        li.innerHTML = `<input type="checkbox" ${task.completed ? 'checked' : ''}><span>${task.text}</span><button class="delete-todo-btn">&times;</button>`;
+        li.querySelector('.delete-todo-btn').onclick = () => li.remove();
+        this.elements.todoList.appendChild(li);
+    },
+
+    collectUIData() {
+        return {
+            dailyFocus: this.elements.dailyFocus.value, criticalTasks: this.elements.criticalTasks.value,
+            mainAchievement: this.elements.mainAchievement.value, mainChallenge: this.elements.mainChallenge.value,
+            kpiMatriculas: this.elements.kpiMatriculas.value, kpiCancelamentos: this.elements.kpiCancelamentos.value,
+            energyLevel: this.elements.energyLevel.value,
+            todo: Array.from(this.elements.todoList.querySelectorAll('li')).map(li => ({ text: li.querySelector('span').textContent, completed: li.querySelector('input').checked })),
+        };
+    },
+
+    async handleFinalizeDay() {
+        if (this.state.isEditing) {
+            if (!confirm("Tem certeza que deseja finalizar o dia?")) return;
+            const dataToSave = this.collectUIData();
+            dataToSave.isFinalized = true;
+            await this.saveData('diario', this.getDateString(this.state.displayedDate), { diarioDeBordo: dataToSave });
+            const pendingTasks = dataToSave.todo.filter(t => !t.completed);
+            if (pendingTasks.length > 0) {
+                const nextDay = new Date(this.state.displayedDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                const nextDayString = this.getDateString(nextDay);
+                const nextDayData = (await this.fetchData('diario', nextDayString)) || { diarioDeBordo: { todo: [] } };
+                const tasksToCarryOver = pendingTasks.map(t => ({ text: `[ADIADO] ${t.text}`, completed: false }));
+                nextDayData.diarioDeBordo.todo = [...tasksToCarryOver, ...(nextDayData.diarioDeBordo.todo || [])];
+                await this.saveData('diario', nextDayString, nextDayData);
+            }
+            this.navigateDays(1);
+        } else {
+            this.state.isEditing = true;
+            const data = await this.fetchData('diario', this.getDateString(this.state.displayedDate));
+            if(data?.diarioDeBordo) {
+                data.diarioDeBordo.isFinalized = false;
+                await this.saveData('diario', this.getDateString(this.state.displayedDate), data);
+            }
+            this.toggleFieldsDisabled();
+        }
+    },
+    
+    async generateWeeklyAnalysis() {
+        this.elements.weeklySummarySection.style.display = 'block';
+        let analysisText = `Análise de Performance (Consultor Estratégico)\n=================================================\n\n`;
+        let weeklyData = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(this.state.displayedDate); date.setDate(date.getDate() - i);
+            const data = await this.fetchData('diario', this.getDateString(date));
+            if (data?.diarioDeBordo) weeklyData.push(data.diarioDeBordo);
+        }
+        if (weeklyData.length === 0) { analysisText += "Não há dados para análise."; } 
+        else {
+            const totalMatriculas = weeklyData.reduce((acc, d) => acc + Number(d.kpiMatriculas || 0), 0);
+            const totalCancelamentos = weeklyData.reduce((acc, d) => acc + Number(d.kpiCancelamentos || 0), 0);
+            const avgEnergy = weeklyData.reduce((acc, d) => acc + Number(d.energyLevel || 0), 0) / weeklyData.length;
+            analysisText += `DIAGNÓSTICO GERAL:\n- Saldo de Alunos: ${totalMatriculas - totalCancelamentos} (Mat: ${totalMatriculas}, Canc: ${totalCancelamentos})\n- Nível de Energia Médio: ${avgEnergy.toFixed(1)}/5\n\n`;
+            analysisText += `ANÁLISE ESTRATÉGICA:\n`;
+            if ((totalMatriculas - totalCancelamentos) < 0) { analysisText += `• ALERTA DE RETENÇÃO: O saldo negativo é um sinal crítico de evasão.\n`; }
+            else { analysisText += `• MOMENTUM DE CAPTAÇÃO: O saldo positivo indica que as estratégias de marketing estão a funcionar.\n`; }
+            if (avgEnergy < 2.8) { analysisText += `• RISCO DE BURNOUT: A energia baixa da equipa afeta a qualidade e a retenção.\n`; }
+        }
+        this.elements.weeklySummaryContent.textContent = analysisText;
+        this.elements.weeklySummarySection.scrollIntoView({ behavior: 'smooth' });
+    },
+
+    populateActionBank() {
+        const actions = {
+            "🧠 Análise Pedagógica Individual": [ "Identificar 3 alunos 'Longo Prazo' (acima de 2 anos) e agendar 'Reunião de Metas' com os pais.", "Revisar o tempo de conclusão dos blocos de 5 alunos em estágio inicial. Estão demasiado rápidos ou lentos?", "Analisar as pastas de 3 alunos que apresentaram erros de repetição e planear uma orientação individual.", "Verificar a programação de material de 5 alunos próximos a mudarem de estágio." ],
+            "👨‍👩‍👧 Comunicação com os Pais": [ "Ligar para 2 pais de alunos novos (menos de 3 meses) apenas para dar um feedback positivo e perguntar como está a rotina em casa.", "Enviar um e-mail para a base de pais com um artigo sobre a importância da 'tarefa de casa bem feita'.", "Identificar um aluno com dificuldade e agendar uma reunião de alinhamento com os pais, já com um plano de ação em mãos.", "Preparar e enviar o 'Boletim de Desempenho Mensal' para os alunos do Estágio G em diante." ],
+            "🤝 Gestão da Equipe e Treinamento": [ "Realizar um minitreinamento de 10 min sobre a 'Importância do Elogio' durante a correção.", "Observar por 15 minutos a interação de um auxiliar com os alunos e preparar um feedback construtivo.", "Delegar a tarefa de organização do estoque de blocos para um membro da equipa.", "Verificar se todos os treinamentos online obrigatórios da franquia estão em dia para toda a equipa." ],
+            "🏢 Processos e Ambiente da Unidade": [ "Auditar o estoque dos 5 estágios mais comuns (ex: Mat. 4A, D, G; Port. AI, F) e verificar o ponto de pedido.", "Cronometrar o tempo médio de atendimento na receção em horário de pico para identificar gargalos.", "Verificar a limpeza e organização da 'Sala dos Pais' ou área de espera.", "Checar o funcionamento de todos os equipamentos (tablets, cronómetros, ar condicionado)." ],
+            "🚀 Captação e Marketing": [ "Publicar um 'caso de sucesso' anónimo (ex: 'aluno avançou 2 anos escolares em 1') nas redes sociais.", "Entrar em contato com uma escola parceira para agendar uma visita ou evento conjunto.", "Analisar os dados dos últimos 10 novos alunos para identificar o principal canal de captação (indicação, fachada, etc.).", "Gravar um vídeo curto (1 min) para o Instagram com uma dica de estudo para os pais." ]
+        };
+        let html = '';
+        for (const category in actions) {
+            html += `<h3>${category}</h3>`;
+            actions[category].forEach(actionText => {
+                html += `<label class="action-item"><input type="checkbox" class="action-checkbox"> <span>${actionText}</span></label>`;
+            });
+        }
+        html += `<div class="button-container"><button id="add-selected-actions-btn" class="btn">Adicionar Selecionadas ao Dia</button></div>`;
+        this.elements.actionBankContent.innerHTML = html;
+        document.getElementById('add-selected-actions-btn').addEventListener('click', () => {
+            const selectedActions = this.elements.actionBankContent.querySelectorAll('.action-checkbox:checked');
+            selectedActions.forEach(checkbox => {
+                const actionText = checkbox.nextElementSibling.textContent;
+                this.addTodoItem(actionText);
+                checkbox.checked = false;
+            });
+        });
+    },
+
+    populateMaterialSelect() {
+        const materiais = ["Matemática 7A", "Matemática 6A", "Matemática 5A", "Matemática 4A", "Matemática 3A", "Matemática 2A", "Matemática A", "Matemática B", "Matemática C", "Matemática D", "Matemática E", "Matemática F", "Matemática G", "Matemática H", "Matemática I", "Matemática J", "Matemática K", "Matemática L", "Matemática M", "Matemática N", "Matemática O", "Português 7A", "Português 6A", "Português 5A", "Português 4A", "Português 3A", "Português 2A", "Português AI", "Português AII", "Português BI", "Português BII", "Português CI", "Português CII", "Português D", "Português E", "Português F", "Português G", "Português H", "Português I", "Inglês 5A", "Inglês 4A", "Inglês 3A", "Inglês 2A", "Inglês A", "Inglês B", "Inglês C", "Inglês D", "Inglês E", "Inglês F", "Inglês G", "Inglês H", "Inglês I", "Inglês J", "Inglês K", "Inglês L", "Inglês M", "Inglês N", "Inglês O"];
+        this.elements.materialSelect.innerHTML = materiais.map(m => `<option value="${m.replace(/\s/g, '_')}">${m}</option>`).join('');
+    },
+
+    async loadInventory() {
+        const inventoryData = await this.fetchData('inventario', 'estoque');
+        this.state.inventory = inventoryData?.materiais || {};
+        this.renderInventory();
+    },
+    
+    renderInventory() {
+        this.elements.inventoryTbody.innerHTML = '<tr><td colspan="3">Nenhum material no estoque.</td></tr>';
+        const sortedMaterials = Object.keys(this.state.inventory).sort();
+        if (sortedMaterials.length > 0) {
+            let hasStock = false;
+            let html = '';
+            for (const materialId of sortedMaterials) {
+                const item = this.state.inventory[materialId];
+                const qty = item.qty || 0;
+                if (qty > 0) {
+                   hasStock = true;
+                   const fileLink = item.fileUrl ? `<a href="${item.fileUrl}" target="_blank">Ver Ficheiro</a>` : 'Nenhum';
+                   html += `<tr><td>${materialId.replace(/_/g, ' ')}</td><td>${qty}</td><td>${fileLink}</td></tr>`;
+                }
+            }
+            if (hasStock) { this.elements.inventoryTbody.innerHTML = html; }
+        }
+    },
+
+    async updateStock(action) {
+        const materialId = this.elements.materialSelect.value;
+        const qty = parseInt(this.elements.materialQty.value, 10);
+        if (!materialId || isNaN(qty) || qty <= 0) { alert("Selecione um material e insira uma quantidade válida."); return; }
+        this.state.inventory[materialId] = this.state.inventory[materialId] || { qty: 0 };
+        const currentQty = this.state.inventory[materialId].qty;
+        if (action === 'remove' && currentQty < qty) { alert(`Não é possível dar baixa em ${qty} unidades. Estoque atual: ${currentQty}.`); return; }
+        this.state.inventory[materialId].qty = (action === 'add') ? currentQty + qty : currentQty - qty;
+        await this.saveData('inventario', 'estoque', { materiais: this.state.inventory });
+        this.renderInventory();
+    },
+    
+    openUploadWidget() {
+        const materialId = this.elements.materialSelect.value;
+        if (!materialId) { alert("Selecione um material para anexar um ficheiro."); return; }
+        if (!cloudinaryConfig || !cloudinaryConfig.cloudName || !cloudinaryConfig.uploadPreset) {
+            alert("ERRO: As chaves do Cloudinary não estão configuradas no ficheiro js/config.js.");
+            return;
+        }
+        const uploadWidget = cloudinary.createUploadWidget({
+            cloudName: cloudinaryConfig.cloudName, uploadPreset: cloudinaryConfig.uploadPreset,
+            folder: `${this.state.userId}/inventario`, tags: [this.state.userId, 'inventario', materialId]
+        }, (error, result) => {
+            if (!error && result && result.event === "success") { this.saveFileUrlToInventory(materialId, result.info.secure_url); }
+        });
+        uploadWidget.open();
+    },
+
+    async saveFileUrlToInventory(materialId, fileUrl) {
+        this.state.inventory[materialId] = this.state.inventory[materialId] || { qty: 0 };
+        this.state.inventory[materialId].fileUrl = fileUrl;
+        await this.saveData('inventario', 'estoque', { materiais: this.state.inventory });
+        this.renderInventory();
+        alert(`Ficheiro anexado ao material ${materialId.replace(/_/g, ' ')} com sucesso!`);
+    }
+};
+
+App.init(); // O init será chamado pelo auth.js
